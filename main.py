@@ -8,6 +8,7 @@ Author: Nik
 from pathlib import Path
 
 import config
+from calendar_api import CalendarReader
 
 
 def initialize():
@@ -34,6 +35,8 @@ def main():
 
     print("Project initialized successfully.")
     print("Waiting for calendar module...")
+    reader = CalendarReader()
+reader.print_events()
 
 
 if __name__ == "__main__":
