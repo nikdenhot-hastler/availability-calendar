@@ -84,33 +84,38 @@ ENGLISH_MONTHS = {
 # COLORS
 # ============================================================
 
-# Main dark background.
+# Dark overall background.
 BACKGROUND = (17, 17, 17)
 
-# Text.
+# Main text.
 TEXT_PRIMARY = (235, 235, 235)
-TEXT_SECONDARY = (185, 185, 185)
-TEXT_MUTED = (115, 115, 115)
+
+# Secondary text.
+TEXT_SECONDARY = (175, 175, 175)
+
+# Muted secondary text.
+TEXT_MUTED = (105, 105, 105)
 
 # Free time.
-# Light green/grey, intentionally calm rather than saturated.
+# Light, calm, slightly desaturated green.
 FREE = (190, 200, 184)
 
 # Busy time.
-# Red, but not fluorescent.
-BUSY = (205, 55, 55)
+# Clearly red, but not excessively saturated.
+BUSY = (195, 55, 55)
 
 # Hour separators.
-# Darker than FREE by several tones.
-HOUR_LINE = (75, 82, 74)
+# Significantly darker than FREE.
+HOUR_LINE = (80, 87, 78)
 
-# Background behind each individual day.
+# Background of each row.
 DAY_BACKGROUND = (25, 25, 25)
 
-# Saturday and Sunday.
+# Weekend day labels.
+# Saturday and Sunday use exactly the same color.
 WEEKEND = (145, 45, 45)
 
-# Small green accent above the title.
+# Small green accent above title.
 ACCENT = (115, 155, 105)
 
 
@@ -118,15 +123,16 @@ ACCENT = (115, 155, 105)
 # IMAGE / LAYOUT
 # ============================================================
 
-# Wide image.
-# This is intentional because the image contains 24 hours.
+# Wide image because 24 hours must remain readable.
 IMAGE_WIDTH = 1400
 
-# Number of days.
+# Number of calendar days.
 DAYS_TO_SHOW = 14
 
-# Timeline.
+# Timeline starts at 06:00.
 START_HOUR = 6
+
+# Full 24-hour period.
 HOURS = 24
 
 # Margins.
@@ -134,32 +140,37 @@ MARGIN_LEFT = 55
 MARGIN_RIGHT = 55
 
 # Header.
-HEADER_TOP = 35
-TITLE_SIZE = 48
-SUBTITLE_SIZE = 24
+HEADER_TOP = 32
 
-# Time scale.
-TIME_SIZE = 22
-TIME_Y = 135
+# Smaller than the previous oversized version.
+TITLE_SIZE = 42
+SUBTITLE_SIZE = 20
 
-# Day labels.
-DAY_SIZE = 27
+# Hour labels.
+TIME_SIZE = 20
+TIME_Y = 120
+
+# Day/date labels.
+DAY_SIZE = 23
 
 # Rows.
-DAY_START_Y = 180
-ROW_HEIGHT = 76
-BAR_HEIGHT = 44
+DAY_START_Y = 160
+ROW_HEIGHT = 70
 
-# Space reserved for date labels.
+# Availability bar.
+BAR_HEIGHT = 40
+
+# Width reserved for weekday/date.
 DAY_LABEL_WIDTH = 245
 
-# Timeline starts after date labels.
+# Timeline X coordinate.
 BAR_X = MARGIN_LEFT + DAY_LABEL_WIDTH
 
 
 class AvailabilityImageGenerator:
 
     def __init__(self, events):
+
         self.events = events
 
         self.timezone = pytz.timezone(
@@ -178,7 +189,7 @@ class AvailabilityImageGenerator:
         self.height = (
             DAY_START_Y
             + ROW_HEIGHT * DAYS_TO_SHOW
-            + 100
+            + 90
         )
 
     # ========================================================
@@ -187,7 +198,7 @@ class AvailabilityImageGenerator:
 
     def _font_path(self):
         """
-        Finds a font available on GitHub Actions.
+        Finds a font that works on GitHub Actions Linux.
 
         DejaVu Sans supports Ukrainian Cyrillic.
         """
@@ -199,6 +210,7 @@ class AvailabilityImageGenerator:
         )
 
         if local_font:
+
             local_path = Path(
                 local_font
             )
@@ -223,13 +235,14 @@ class AvailabilityImageGenerator:
         )
 
     def _font(self, size):
+
         return ImageFont.truetype(
             self.font_path,
             size,
         )
 
     # ========================================================
-    # GOOGLE CALENDAR EVENT PARSING
+    # GOOGLE CALENDAR EVENTS
     # ========================================================
 
     def _parse_event_times(self, event):
@@ -395,7 +408,7 @@ class AvailabilityImageGenerator:
         draw.text(
             (
                 MARGIN_LEFT,
-                HEADER_TOP + 38,
+                HEADER_TOP + 30,
             ),
             title,
             font=title_font,
@@ -412,6 +425,11 @@ class AvailabilityImageGenerator:
         bar_x,
         bar_width,
     ):
+        """
+        Draws:
+
+        06 07 08 ... 23 00 01 ... 05
+        """
 
         font = self._font(
             TIME_SIZE
@@ -426,7 +444,8 @@ class AvailabilityImageGenerator:
         ):
 
             hour = (
-                START_HOUR + index
+                START_HOUR
+                + index
             ) % 24
 
             label = f"{hour:02d}"
@@ -444,7 +463,8 @@ class AvailabilityImageGenerator:
             )
 
             label_width = (
-                bbox[2] - bbox[0]
+                bbox[2]
+                - bbox[0]
             )
 
             draw.text(
@@ -459,7 +479,7 @@ class AvailabilityImageGenerator:
             )
 
     # ========================================================
-    # HOUR GRID
+    # HOUR SEPARATORS
     # ========================================================
 
     def _draw_hour_grid(
@@ -471,9 +491,7 @@ class AvailabilityImageGenerator:
         bar_height,
     ):
         """
-        Draws vertical separators for every hour.
-
-        They remain visible over both free and busy areas.
+        Separates every hour with a dark vertical line.
         """
 
         hour_width = (
@@ -580,7 +598,7 @@ class AvailabilityImageGenerator:
         bar_width,
     ):
         """
-        Draws one complete 24-hour row.
+        Draws one 24-hour row:
 
         06:00 current day
         ->
@@ -607,18 +625,22 @@ class AvailabilityImageGenerator:
 
         row_end = (
             row_start
-            + timedelta(days=1)
+            + timedelta(
+                days=1
+            )
         )
 
         # ----------------------------------------------------
-        # Row background FIRST
+        # Background first
         # ----------------------------------------------------
 
         draw.rounded_rectangle(
             (
                 MARGIN_LEFT - 10,
                 y,
-                self.width - MARGIN_RIGHT + 10,
+                self.width
+                - MARGIN_RIGHT
+                + 10,
                 y + BAR_HEIGHT + 16,
             ),
             radius=6,
@@ -626,7 +648,7 @@ class AvailabilityImageGenerator:
         )
 
         # ----------------------------------------------------
-        # Date text
+        # Day / date
         # ----------------------------------------------------
 
         if language == "uk":
@@ -659,14 +681,14 @@ class AvailabilityImageGenerator:
             f"{day_name},"
         )
 
-        # Saturday/Sunday in dark red.
+        # Saturday and Sunday:
+        # same dark-red color.
         weekday_color = (
             WEEKEND
             if date.weekday() in (5, 6)
             else TEXT_PRIMARY
         )
 
-        # Weekday.
         draw.text(
             (
                 MARGIN_LEFT,
@@ -688,7 +710,6 @@ class AvailabilityImageGenerator:
             - weekday_bbox[0]
         )
 
-        # Date.
         draw.text(
             (
                 MARGIN_LEFT
@@ -702,7 +723,7 @@ class AvailabilityImageGenerator:
         )
 
         # ----------------------------------------------------
-        # Free time bar
+        # Free-time base
         # ----------------------------------------------------
 
         bar_y = y + 6
@@ -711,8 +732,10 @@ class AvailabilityImageGenerator:
             (
                 bar_x,
                 bar_y,
-                bar_x + bar_width,
-                bar_y + BAR_HEIGHT,
+                bar_x
+                + bar_width,
+                bar_y
+                + BAR_HEIGHT,
             ),
             radius=6,
             fill=FREE,
@@ -732,12 +755,14 @@ class AvailabilityImageGenerator:
                 event
             )
 
+            # No overlap.
             if event_end <= row_start:
                 continue
 
             if event_start >= row_end:
                 continue
 
+            # All-day event.
             if all_day:
 
                 self._draw_busy_interval(
@@ -752,6 +777,7 @@ class AvailabilityImageGenerator:
                     BAR_HEIGHT,
                 )
 
+            # Timed event.
             else:
 
                 self._draw_busy_interval(
@@ -767,7 +793,7 @@ class AvailabilityImageGenerator:
                 )
 
         # ----------------------------------------------------
-        # Hour separators on top
+        # Hour separators last
         # ----------------------------------------------------
 
         self._draw_hour_grid(
@@ -792,7 +818,7 @@ class AvailabilityImageGenerator:
     ):
 
         font = self._font(
-            20
+            18
         )
 
         if language == "uk":
@@ -814,7 +840,7 @@ class AvailabilityImageGenerator:
                 "Time zone: Europe/Kyiv"
             )
 
-        marker_size = 28
+        marker_size = 26
 
         # ----------------------------------------------------
         # Free
@@ -824,7 +850,8 @@ class AvailabilityImageGenerator:
             (
                 MARGIN_LEFT,
                 y,
-                MARGIN_LEFT + marker_size,
+                MARGIN_LEFT
+                + marker_size,
                 y + marker_size,
             ),
             radius=5,
@@ -835,7 +862,7 @@ class AvailabilityImageGenerator:
             (
                 MARGIN_LEFT
                 + marker_size
-                + 12,
+                + 10,
                 y - 1,
             ),
             free_text,
@@ -849,14 +876,15 @@ class AvailabilityImageGenerator:
 
         busy_x = (
             MARGIN_LEFT
-            + 170
+            + 155
         )
 
         draw.rounded_rectangle(
             (
                 busy_x,
                 y,
-                busy_x + marker_size,
+                busy_x
+                + marker_size,
                 y + marker_size,
             ),
             radius=5,
@@ -867,7 +895,7 @@ class AvailabilityImageGenerator:
             (
                 busy_x
                 + marker_size
-                + 12,
+                + 10,
                 y - 1,
             ),
             busy_text,
@@ -886,7 +914,8 @@ class AvailabilityImageGenerator:
         )
 
         timezone_width = (
-            bbox[2] - bbox[0]
+            bbox[2]
+            - bbox[0]
         )
 
         draw.text(
@@ -902,7 +931,7 @@ class AvailabilityImageGenerator:
         )
 
     # ========================================================
-    # GENERATE LANGUAGE VERSION
+    # GENERATE ONE LANGUAGE
     # ========================================================
 
     def _generate_language(
@@ -924,19 +953,13 @@ class AvailabilityImageGenerator:
             image
         )
 
-        # ----------------------------------------------------
-        # Header
-        # ----------------------------------------------------
-
+        # Header.
         self._draw_header(
             draw,
             language,
         )
 
-        # ----------------------------------------------------
-        # Timeline
-        # ----------------------------------------------------
-
+        # Timeline.
         bar_x = BAR_X
 
         bar_width = (
@@ -951,10 +974,7 @@ class AvailabilityImageGenerator:
             bar_width,
         )
 
-        # ----------------------------------------------------
-        # Days
-        # ----------------------------------------------------
-
+        # Days.
         now = datetime.now(
             self.timezone
         )
@@ -981,20 +1001,14 @@ class AvailabilityImageGenerator:
                 bar_width,
             )
 
-        # ----------------------------------------------------
-        # Legend
-        # ----------------------------------------------------
-
+        # Legend.
         self._draw_legend(
             draw,
             language,
             y + 10,
         )
 
-        # ----------------------------------------------------
-        # Save
-        # ----------------------------------------------------
-
+        # Save.
         image.save(
             output_path,
             "PNG",
@@ -1006,12 +1020,12 @@ class AvailabilityImageGenerator:
         )
 
     # ========================================================
-    # GENERATE BOTH
+    # GENERATE BOTH LANGUAGES
     # ========================================================
 
     def generate(self):
         """
-        Generates English and Ukrainian images.
+        Generates both English and Ukrainian images.
         """
 
         english_output = (
