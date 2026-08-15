@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
+
+<title>Моя поточна доступність</title>
+
+<style>
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background: #111111;
+}
+
+body {
+    width: 100%;
+    overflow-x: hidden;
+    font-family: Calibri, Arial, sans-serif;
+}
+
+/*
+    Main horizontal scrolling container.
+*/
+.calendar-scroll {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    -webkit-overflow-scrolling: touch;
+
+    scrollbar-width: auto;
+
+    box-sizing: border-box;
+
+    padding: 0 0 12px 0;
+}
+
+/*
+    The calendar itself is intentionally wider
+    than a phone screen.
+*/
+.calendar-content {
+    width: 1400px;
+    min-width: 1400px;
+    max-width: none;
+}
+
+/*
+    The generated PNG.
+*/
+.calendar-content img {
+    display: block;
+
+    width: 1400px;
+    min-width: 1400px;
+    max-width: none;
+
+    height: auto;
+
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+/*
+    Instruction under the calendar.
+*/
+.scroll-hint {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 10px 15px 4px 15px;
+
+    text-align: center;
+
+    color: #999999;
+
+    font-family: Calibri, Arial, sans-serif;
+
+    font-size: 16px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="calendar-scroll">
+
+    <div class="calendar-content">
+
+        <img
+            src="output/availability_uk.png"
+            alt="Моя поточна доступність"
+        >
+
+    </div>
+
+</div>
+
+<div class="scroll-hint">
+    ← Проведіть пальцем убік, щоб переглянути весь графік до 05:00 →
+</div>
+
+</body>
+</html>
