@@ -1,16 +1,49 @@
 """
 Availability image generator.
 
-Creates a public availability image from Google Calendar events.
+Creates public availability images from Google Calendar events.
+
+Generated files:
+    output/availability.png
+    output/availability_uk.png
+
 Event titles and private calendar information are never displayed.
 """
 
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import pytz
 from PIL import Image, ImageDraw, ImageFont
 
 import config
+
+
+UKRAINIAN_DAYS = {
+    0: "пн",
+    1: "вт",
+    2: "ср",
+    3: "чт",
+    4: "пт",
+    5: "сб",
+    6: "нд",
+}
+
+
+UKRAINIAN_MONTHS = {
+    1: "січня",
+    2: "лютого",
+    3: "березня",
+    4: "квітня",
+    5: "травня",
+    6: "червня",
+    7: "липня",
+    8: "серпня",
+    9: "вересня",
+    10: "жовтня",
+    11: "листопада",
+    12: "грудня",
+}
 
 
 class AvailabilityImageGenerator:
@@ -24,35 +57,12 @@ class AvailabilityImageGenerator:
             exist_ok=True,
         )
 
-        self.image = Image.new(
-            "RGB",
-            (config.WIDTH, config.HEIGHT),
-            config.BACKGROUND,
-        )
-
-        self.draw = ImageDraw.Draw(self.image)
-
-        font_path = self._font_path()
-
-        self.font_header = ImageFont.truetype(
-            font_path,
-            config.HEADER_SIZE,
-        )
-
-        self.font_day = ImageFont.truetype(
-            font_path,
-            config.DAY_SIZE,
-        )
-
-        self.font_small = ImageFont.truetype(
-            font_path,
-            config.SMALL_SIZE,
-        )
+        self.font_path = self._font_path()
 
     def _font_path(self):
         """
-        Returns a font path that works on Windows
-        and GitHub Actions Linux runners.
+        Returns a valid font path on Windows
+        and GitHub Actions Linux.
         """
 
         local_font = getattr(
@@ -62,15 +72,22 @@ class AvailabilityImageGenerator:
         )
 
         if local_font:
-            return str(local_font)
+            local_path = Path(local_font)
 
-        # GitHub Actions / Linux
-        linux_font = (
+            if local_path.exists():
+                return str(local_path)
+
+        linux_font = Path(
             "/usr/share/fonts/truetype/dejavu/"
             "DejaVuSans.ttf"
         )
 
-        return linux_font
+        if linux_font.exists():
+            return str(linux_font)
+
+        raise FileNotFoundError(
+            "No usable font found."
+        )
 
     def _parse_event_times(self, event):
         """
@@ -124,21 +141,46 @@ class AvailabilityImageGenerator:
             False,
         )
 
-    def _draw_header(self):
+    def _create_fonts(self):
+        """
+        Creates all fonts used by the image.
+        """
+
+        return {
+            "header": ImageFont.truetype(
+                self.font_path,
+                config.HEADER_SIZE,
+            ),
+            "day": ImageFont.truetype(
+                self.font_path,
+                config.DAY_SIZE,
+            ),
+            "small": ImageFont.truetype(
+                self.font_path,
+                config.SMALL_SIZE,
+            ),
+        }
+
+    def _draw_header(self, draw, font, language):
         """
         Draws the public header.
         """
 
-        self.draw.text(
+        if language == "uk":
+            title = "ДОСТУПНІСТЬ"
+        else:
+            title = "AVAILABILITY"
+
+        draw.text(
             (40, 30),
-            "AVAILABILITY",
-            font=self.font_header,
+            title,
+            font=font,
             fill=config.TEXT,
         )
 
-    def _draw_time_scale(self):
+    def _draw_time_scale(self, draw, font):
         """
-        Draws hourly time scale.
+        Draws hourly time scale from 08 to 23.
         """
 
         bar_x = 280
@@ -165,45 +207,70 @@ class AvailabilityImageGenerator:
 
             label = f"{hour:02d}"
 
-            bbox = self.draw.textbbox(
+            bbox = draw.textbbox(
                 (0, 0),
                 label,
-                font=self.font_small,
+                font=font,
             )
 
             label_width = (
                 bbox[2] - bbox[0]
             )
 
-            self.draw.text(
+            draw.text(
                 (
                     x - label_width / 2,
                     y,
                 ),
                 label,
-                font=self.font_small,
+                font=font,
                 fill=config.TEXT,
             )
 
-    def _draw_day(self, date, y):
+    def _format_date(self, date, language):
         """
-        Draws one day.
-
-        Green = available.
-        Red = booked.
-
-        Booked intervals are continuous and use
-        exact event start/end times, including minutes.
+        Returns date label in English or Ukrainian.
         """
 
-        date_text = date.strftime(
+        if language == "uk":
+            day_name = UKRAINIAN_DAYS[
+                date.weekday()
+            ]
+
+            month_name = UKRAINIAN_MONTHS[
+                date.month
+            ]
+
+            return (
+                f"{day_name}, "
+                f"{date.day} "
+                f"{month_name}"
+            )
+
+        return date.strftime(
             "%a, %d %b"
         )
 
-        self.draw.text(
+    def _draw_day(
+        self,
+        draw,
+        date,
+        y,
+        font,
+    ):
+        """
+        Draws one day's availability bar.
+        """
+
+        date_text = self._format_date(
+            date,
+            self.language,
+        )
+
+        draw.text(
             (40, y),
             date_text,
-            font=self.font_day,
+            font=font,
             fill=config.TEXT,
         )
 
@@ -238,7 +305,7 @@ class AvailabilityImageGenerator:
         )
 
         # Full day is available by default.
-        self.draw.rectangle(
+        draw.rectangle(
             (
                 bar_x,
                 bar_y,
@@ -248,14 +315,15 @@ class AvailabilityImageGenerator:
             fill=config.AVAILABLE,
         )
 
-        # Draw continuous booked areas.
+        # Draw booked areas.
         for event in self.events:
 
-            event_start, event_end, all_day = (
-                self._parse_event_times(event)
-            )
+            (
+                event_start,
+                event_end,
+                all_day,
+            ) = self._parse_event_times(event)
 
-            # Event does not overlap visible period.
             if event_end <= day_start:
                 continue
 
@@ -265,6 +333,7 @@ class AvailabilityImageGenerator:
             if all_day:
                 visible_start = day_start
                 visible_end = day_end
+
             else:
                 visible_start = max(
                     event_start,
@@ -306,7 +375,7 @@ class AvailabilityImageGenerator:
                 / total_minutes
             )
 
-            self.draw.rectangle(
+            draw.rectangle(
                 (
                     x1,
                     bar_y,
@@ -318,14 +387,40 @@ class AvailabilityImageGenerator:
 
         return y + 70
 
-    def generate(self):
+    def _generate_language(
+        self,
+        language,
+        output_path,
+    ):
         """
-        Generates and saves availability image.
+        Generates one language version.
         """
 
-        self._draw_header()
+        self.language = language
 
-        self._draw_time_scale()
+        image = Image.new(
+            "RGB",
+            (
+                config.WIDTH,
+                config.HEIGHT,
+            ),
+            config.BACKGROUND,
+        )
+
+        draw = ImageDraw.Draw(image)
+
+        fonts = self._create_fonts()
+
+        self._draw_header(
+            draw,
+            fonts["header"],
+            language,
+        )
+
+        self._draw_time_scale(
+            draw,
+            fonts["small"],
+        )
 
         now = datetime.now(
             self.timezone
@@ -343,21 +438,45 @@ class AvailabilityImageGenerator:
             ).date()
 
             y = self._draw_day(
+                draw,
                 date,
                 y,
+                fonts["day"],
             )
 
             if y > config.HEIGHT - 80:
                 break
 
-        self.image.save(
-            config.OUTPUT_IMAGE,
+        image.save(
+            output_path,
             "PNG",
         )
 
-        print()
-
         print(
             f"Availability image created: "
-            f"{config.OUTPUT_IMAGE}"
+            f"{output_path}"
+        )
+
+    def generate(self):
+        """
+        Generates both English and Ukrainian images.
+        """
+
+        english_output = (
+            config.OUTPUT_IMAGE
+        )
+
+        ukrainian_output = (
+            config.OUTPUT_DIR
+            / "availability_uk.png"
+        )
+
+        self._generate_language(
+            "en",
+            english_output,
+        )
+
+        self._generate_language(
+            "uk",
+            ukrainian_output,
         )
