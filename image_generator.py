@@ -32,25 +32,27 @@ class AvailabilityImageGenerator:
 
         self.draw = ImageDraw.Draw(self.image)
 
+        font_path = self._font_path()
+
         self.font_header = ImageFont.truetype(
-            self._font_path(),
+            font_path,
             config.HEADER_SIZE,
         )
 
         self.font_day = ImageFont.truetype(
-            self._font_path(),
+            font_path,
             config.DAY_SIZE,
         )
 
         self.font_small = ImageFont.truetype(
-            self._font_path(),
+            font_path,
             config.SMALL_SIZE,
         )
 
     def _font_path(self):
         """
-        Uses local font if available.
-        Falls back to Arial on Windows.
+        Returns a font path that works on Windows
+        and GitHub Actions Linux runners.
         """
 
         local_font = getattr(
@@ -62,7 +64,13 @@ class AvailabilityImageGenerator:
         if local_font:
             return str(local_font)
 
-        return r"C:\Windows\Fonts\arial.ttf"
+        # GitHub Actions / Linux
+        linux_font = (
+            "/usr/share/fonts/truetype/dejavu/"
+            "DejaVuSans.ttf"
+        )
+
+        return linux_font
 
     def _parse_event_times(self, event):
         """
