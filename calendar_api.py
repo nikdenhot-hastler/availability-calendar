@@ -89,6 +89,26 @@ class CalendarReader:
                 print(
                     f"Found {len(events)} events"
                 )
+                for event in events:
+    start_data = event.get("start", {})
+    end_data = event.get("end", {})
+
+    start_value = (
+        start_data.get("dateTime")
+        or start_data.get("date")
+    )
+
+    end_value = (
+        end_data.get("dateTime")
+        or end_data.get("date")
+    )
+
+    print(
+        f"  EVENT: {event.get('summary', '(без назви)')}"
+    )
+    print(
+        f"         {start_value} -> {end_value}"
+    )
 
                 all_events.extend(events)
 
