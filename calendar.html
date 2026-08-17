@@ -99,6 +99,7 @@ body {
     <div class="calendar-content">
 
         <img
+            id="availability-image"
             src="output/availability_uk.png"
             alt="Моя поточна доступність"
         >
@@ -110,6 +111,25 @@ body {
 <div class="scroll-hint">
     ← Проведіть пальцем убік, щоб переглянути весь графік до 05:00 →
 </div>
+
+<script>
+
+/*
+    Cache busting.
+
+    Every time the page is opened, a unique timestamp
+    is added to the PNG URL.
+
+    This prevents the browser/CDN from displaying
+    an old cached version of the calendar.
+*/
+
+const image = document.getElementById("availability-image");
+
+image.src =
+    "output/availability_uk.png?v=" + Date.now();
+
+</script>
 
 </body>
 </html>
