@@ -342,12 +342,32 @@ class AvailabilityImageGenerator:
 
     def _event_status(self, event):
 
+        # --------------------------------------------------------
+        # MOVABLE EVENTS
+        # --------------------------------------------------------
+        #
+        # 1. Events from vmedyk@gmail.com are movable.
+        #
+        # 2. An event explicitly marked with Google Calendar
+        #    colorId 6 (Tangerine / Мандарин) is also movable.
+        #
+        # --------------------------------------------------------
+
+        source_calendar = event.get(
+            "_source_calendar_id",
+            "",
+        )
+
         color_id = str(
             event.get(
                 "colorId",
                 "",
             )
         )
+
+        if source_calendar == "vmedyk@gmail.com":
+
+            return "movable"
 
         if color_id == MOVABLE_COLOR_ID:
 
