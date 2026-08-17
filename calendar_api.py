@@ -89,26 +89,50 @@ class CalendarReader:
                 print(
                     f"Found {len(events)} events"
                 )
+
+                # Diagnostic output.
+                # Shows exactly which events were found
+                # in each calendar.
+
                 for event in events:
-    start_data = event.get("start", {})
-    end_data = event.get("end", {})
 
-    start_value = (
-        start_data.get("dateTime")
-        or start_data.get("date")
-    )
+                    start_data = event.get(
+                        "start",
+                        {}
+                    )
 
-    end_value = (
-        end_data.get("dateTime")
-        or end_data.get("date")
-    )
+                    end_data = event.get(
+                        "end",
+                        {}
+                    )
 
-    print(
-        f"  EVENT: {event.get('summary', '(без назви)')}"
-    )
-    print(
-        f"         {start_value} -> {end_value}"
-    )
+                    start_value = (
+                        start_data.get(
+                            "dateTime"
+                        )
+                        or start_data.get(
+                            "date"
+                        )
+                    )
+
+                    end_value = (
+                        end_data.get(
+                            "dateTime"
+                        )
+                        or end_data.get(
+                            "date"
+                        )
+                    )
+
+                    print(
+                        f"  EVENT: "
+                        f"{event.get('summary', '(без назви)')}"
+                    )
+
+                    print(
+                        f"         "
+                        f"{start_value} -> {end_value}"
+                    )
 
                 all_events.extend(events)
 
@@ -119,15 +143,25 @@ class CalendarReader:
                     f"{calendar_id}: {error}"
                 )
 
-        # Remove exact duplicate events.
-        # This protects against the same event appearing
-        # in both calendars.
+        # ====================================================
+        # REMOVE EXACT DUPLICATES
+        # ====================================================
+        #
+        # The same event may appear in more than one calendar.
+        # In that case it should only occupy the availability
+        # calendar once.
+        #
+        # Two events are considered identical when they have
+        # the same title, start time and end time.
+        # ====================================================
+
         unique_events = []
+
         seen = set()
 
         for event in all_events:
 
-            start = event.get(
+            start_data = event.get(
                 "start",
                 {}
             )
@@ -138,13 +172,21 @@ class CalendarReader:
             )
 
             start_value = (
-                start.get("dateTime")
-                or start.get("date")
+                start_data.get(
+                    "dateTime"
+                )
+                or start_data.get(
+                    "date"
+                )
             )
 
             end_value = (
-                end_data.get("dateTime")
-                or end_data.get("date")
+                end_data.get(
+                    "dateTime"
+                )
+                or end_data.get(
+                    "date"
+                )
             )
 
             summary = event.get(
@@ -159,11 +201,18 @@ class CalendarReader:
             )
 
             if duplicate_key in seen:
+
                 continue
 
-            seen.add(duplicate_key)
-            unique_events.append(event)
+            seen.add(
+                duplicate_key
+            )
 
+            unique_events.append(
+                event
+            )
+
+        print()
         print(
             f"Total unique events: "
             f"{len(unique_events)}"
