@@ -3,6 +3,8 @@ Google Calendar API reader.
 
 Reads availability from multiple Google Calendars
 and returns one combined list of events.
+
+Events from MOVABLE calendars are marked as movable.
 """
 
 from datetime import datetime, timedelta
@@ -90,11 +92,17 @@ class CalendarReader:
                     f"Found {len(events)} events"
                 )
 
-                # Diagnostic output.
-                # Shows exactly which events were found
-                # in each calendar.
+                # ------------------------------------------------
+                # Add source calendar information to every event.
+                # ------------------------------------------------
 
                 for event in events:
+
+                    event["_source_calendar_id"] = calendar_id
+
+                    # ------------------------------------------------
+                    # Diagnostic information.
+                    # ------------------------------------------------
 
                     start_data = event.get(
                         "start",
@@ -107,26 +115,27 @@ class CalendarReader:
                     )
 
                     start_value = (
-                        start_data.get(
-                            "dateTime"
-                        )
-                        or start_data.get(
-                            "date"
-                        )
+                        start_data.get("dateTime")
+                        or start_data.get("date")
                     )
 
                     end_value = (
-                        end_data.get(
-                            "dateTime"
-                        )
-                        or end_data.get(
-                            "date"
-                        )
+                        end_data.get("dateTime")
+                        or end_data.get("date")
+                    )
+
+                    summary = event.get(
+                        "summary",
+                        "(без назви)"
+                    )
+
+                    color_id = event.get(
+                        "colorId",
+                        ""
                     )
 
                     print(
-                        f"  EVENT: "
-                        f"{event.get('summary', '(без назви)')}"
+                        f"  EVENT: {summary}"
                     )
 
                     print(
@@ -134,7 +143,19 @@ class CalendarReader:
                         f"{start_value} -> {end_value}"
                     )
 
-                all_events.extend(events)
+                    print(
+                        f"         "
+                        f"Calendar: {calendar_id}"
+                    )
+
+                    print(
+                        f"         "
+                        f"colorId: {color_id or '(calendar color)'}"
+                    )
+
+                all_events.extend(
+                    events
+                )
 
             except Exception as error:
 
@@ -143,17 +164,9 @@ class CalendarReader:
                     f"{calendar_id}: {error}"
                 )
 
-        # ====================================================
+        # ============================================================
         # REMOVE EXACT DUPLICATES
-        # ====================================================
-        #
-        # The same event may appear in more than one calendar.
-        # In that case it should only occupy the availability
-        # calendar once.
-        #
-        # Two events are considered identical when they have
-        # the same title, start time and end time.
-        # ====================================================
+        # ============================================================
 
         unique_events = []
 
@@ -172,21 +185,13 @@ class CalendarReader:
             )
 
             start_value = (
-                start_data.get(
-                    "dateTime"
-                )
-                or start_data.get(
-                    "date"
-                )
+                start_data.get("dateTime")
+                or start_data.get("date")
             )
 
             end_value = (
-                end_data.get(
-                    "dateTime"
-                )
-                or end_data.get(
-                    "date"
-                )
+                end_data.get("dateTime")
+                or end_data.get("date")
             )
 
             summary = event.get(
@@ -201,7 +206,6 @@ class CalendarReader:
             )
 
             if duplicate_key in seen:
-
                 continue
 
             seen.add(
@@ -213,6 +217,7 @@ class CalendarReader:
             )
 
         print()
+
         print(
             f"Total unique events: "
             f"{len(unique_events)}"
