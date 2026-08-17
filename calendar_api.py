@@ -1,8 +1,8 @@
 """
-Google Calendar API module.
+Google Calendar API reader.
 
-Reads Google Calendar events.
-Event titles are never used by the availability image.
+Reads availability from multiple Google Calendars
+and returns one combined list of events.
 """
 
 from datetime import datetime, timedelta
@@ -46,9 +46,7 @@ class CalendarReader:
             config.TIMEZONE
         )
 
-        now = datetime.now(
-            timezone
-        )
+        now = datetime.now(timezone)
 
         end = (
             now
@@ -57,20 +55,98 @@ class CalendarReader:
             )
         )
 
-        result = (
-            self.service
-            .events()
-            .list(
-                calendarId=config.CALENDAR_ID,
-                timeMin=now.isoformat(),
-                timeMax=end.isoformat(),
-                singleEvents=True,
-                orderBy="startTime",
+        all_events = []
+
+        print()
+        print("Reading Google Calendars...")
+
+        for calendar_id in config.CALENDAR_IDS:
+
+            print(
+                f"Reading calendar: {calendar_id}"
             )
-            .execute()
+
+            try:
+
+                result = (
+                    self.service
+                    .events()
+                    .list(
+                        calendarId=calendar_id,
+                        timeMin=now.isoformat(),
+                        timeMax=end.isoformat(),
+                        singleEvents=True,
+                        orderBy="startTime",
+                    )
+                    .execute()
+                )
+
+                events = result.get(
+                    "items",
+                    []
+                )
+
+                print(
+                    f"Found {len(events)} events"
+                )
+
+                all_events.extend(events)
+
+            except Exception as error:
+
+                print(
+                    f"ERROR reading calendar "
+                    f"{calendar_id}: {error}"
+                )
+
+        # Remove exact duplicate events.
+        # This protects against the same event appearing
+        # in both calendars.
+        unique_events = []
+        seen = set()
+
+        for event in all_events:
+
+            start = event.get(
+                "start",
+                {}
+            )
+
+            end_data = event.get(
+                "end",
+                {}
+            )
+
+            start_value = (
+                start.get("dateTime")
+                or start.get("date")
+            )
+
+            end_value = (
+                end_data.get("dateTime")
+                or end_data.get("date")
+            )
+
+            summary = event.get(
+                "summary",
+                ""
+            )
+
+            duplicate_key = (
+                summary,
+                start_value,
+                end_value,
+            )
+
+            if duplicate_key in seen:
+                continue
+
+            seen.add(duplicate_key)
+            unique_events.append(event)
+
+        print(
+            f"Total unique events: "
+            f"{len(unique_events)}"
         )
 
-        return result.get(
-            "items",
-            []
-        )
+        return unique_events
