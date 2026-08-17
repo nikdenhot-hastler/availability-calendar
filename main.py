@@ -1,5 +1,10 @@
 """
-Diagnostic main application for availability calendar.
+Diagnostic main.py
+
+Reads Google Calendar and prints the exact start/end
+times of events visible to the service account.
+
+No event titles are printed.
 """
 
 from datetime import datetime
@@ -17,13 +22,20 @@ def main():
     print("=" * 60)
 
     timezone = pytz.timezone(config.TIMEZONE)
+
     now = datetime.now(timezone)
 
     print()
     print(f"Calendar ID : {config.CALENDAR_ID}")
     print(f"Timezone    : {config.TIMEZONE}")
-    print(f"Current time: {now.strftime('%Y-%m-%d %H:%M:%S %Z')}")
-    print(f"Days to show: {config.DAYS_TO_SHOW}")
+    print(
+        f"Current time: "
+        f"{now.strftime('%Y-%m-%d %H:%M:%S %Z')}"
+    )
+    print(
+        f"Days to show: "
+        f"{config.DAYS_TO_SHOW}"
+    )
 
     print()
     print("-" * 60)
@@ -32,53 +44,75 @@ def main():
 
     reader = CalendarReader()
 
-    try:
-        events = reader.get_events()
-    except Exception as error:
-        print()
-        print("ERROR while reading Google Calendar:")
-        print(type(error).__name__)
-        print(str(error))
-        raise
+    events = reader.get_events()
 
     print()
     print(f"FOUND EVENTS: {len(events)}")
     print()
 
     if not events:
+
         print("NO EVENTS FOUND.")
         print()
-        print("The service account does not see any future events")
-        print("in the requested 14-day period.")
-        print()
+
     else:
 
         print("=" * 60)
-        print("EVENTS VISIBLE TO SERVICE ACCOUNT")
+        print("EVENT TIMES")
         print("=" * 60)
 
-        for number, event in enumerate(events, start=1):
+        for number, event in enumerate(
+            events,
+            start=1
+        ):
 
-            start_data = event.get("start", {})
-            end_data = event.get("end", {})
-
-            start = start_data.get(
-                "dateTime",
-                start_data.get("date", "UNKNOWN")
+            start_data = event.get(
+                "start",
+                {}
             )
 
-            end = end_data.get(
-                "dateTime",
-                end_data.get("date", "UNKNOWN")
+            end_data = event.get(
+                "end",
+                {}
             )
 
-            status = event.get("status", "UNKNOWN")
+            # Timed event
+            if "dateTime" in start_data:
+
+                start = start_data[
+                    "dateTime"
+                ]
+
+                end = end_data[
+                    "dateTime"
+                ]
+
+                event_type = "TIMED"
+
+            # All-day event
+            elif "date" in start_data:
+
+                start = start_data[
+                    "date"
+                ]
+
+                end = end_data[
+                    "date"
+                ]
+
+                event_type = "ALL-DAY"
+
+            else:
+
+                start = "UNKNOWN"
+                end = "UNKNOWN"
+                event_type = "UNKNOWN"
 
             print()
             print(f"EVENT #{number}")
-            print(f"Start : {start}")
-            print(f"End   : {end}")
-            print(f"Status: {status}")
+            print(f"Type : {event_type}")
+            print(f"Start: {start}")
+            print(f"End  : {end}")
             print("-" * 40)
 
     print()
