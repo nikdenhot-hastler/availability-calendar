@@ -4,11 +4,14 @@ Google Calendar API reader.
 Reads availability from multiple Google Calendars
 and returns one combined list of events.
 
-Events from calendars with colorId == "6"
-(Tangerine / Мандарин) are marked as movable.
+The color of an individual event is preserved when
+Google Calendar provides event.colorId.
+
+Calendar color is also preserved as fallback.
 """
 
 from datetime import datetime, timedelta
+import json
 
 import pytz
 
@@ -64,9 +67,7 @@ class CalendarReader:
 
         try:
 
-            # IMPORTANT:
-            # Calendar color is stored in CalendarListEntry,
-            # NOT in the Calendar resource.
+            # Calendar color is stored in CalendarListEntry.
             calendar = (
                 self.service
                 .calendarList()
@@ -76,12 +77,10 @@ class CalendarReader:
                 .execute()
             )
 
-
             color_id = calendar.get(
                 "colorId",
                 "",
             )
-
 
             print(
                 f"Calendar color: "
@@ -89,11 +88,9 @@ class CalendarReader:
                 f"{color_id or '(default)'}"
             )
 
-
             return str(
                 color_id
             )
-
 
         except Exception as error:
 
@@ -101,7 +98,6 @@ class CalendarReader:
                 f"ERROR reading calendar color "
                 f"for {calendar_id}: {error}"
             )
-
 
             return ""
 
@@ -116,11 +112,9 @@ class CalendarReader:
             config.TIMEZONE
         )
 
-
         now = datetime.now(
             timezone
         )
-
 
         end = (
             now
@@ -129,9 +123,7 @@ class CalendarReader:
             )
         )
 
-
         all_events = []
-
 
         print()
         print(
@@ -154,9 +146,6 @@ class CalendarReader:
 
             # ------------------------------------------------
             # Get actual color of the calendar.
-            #
-            # This is the critical part:
-            # calendarList().get()
             # ------------------------------------------------
 
             calendar_color_id = (
@@ -194,8 +183,7 @@ class CalendarReader:
 
 
                 # ------------------------------------------------
-                # Add source calendar information
-                # to every event.
+                # Process every event.
                 # ------------------------------------------------
 
                 for event in events:
@@ -207,9 +195,6 @@ class CalendarReader:
 
 
                     # Store source calendar color.
-                    #
-                    # This is later used by
-                    # image_generator.py.
                     event[
                         "_calendar_color_id"
                     ] = calendar_color_id
@@ -223,7 +208,6 @@ class CalendarReader:
                         "start",
                         {}
                     )
-
 
                     end_data = event.get(
                         "end",
@@ -255,29 +239,64 @@ class CalendarReader:
                         "summary",
                         "(без назви)"
                     )
-                    
-    if summary == "Жим":
-    import json
 
-    print()
-    print("=" * 80)
-    print("FULL JSON FOR EVENT: Жим")
-    print("=" * 80)
-    print(
-        json.dumps(
-            event,
-            ensure_ascii=False,
-            indent=2,
-        )
-    )
-    print("=" * 80)
-    print()
+
+                    # ------------------------------------------------
+                    # Individual event color.
+                    #
+                    # This is what we need to investigate.
+                    # If Google returns colorId = "6",
+                    # the event itself is Tangerine.
+                    # ------------------------------------------------
 
                     event_color_id = event.get(
                         "colorId",
                         ""
                     )
 
+
+                    # Save the individual event color.
+                    event[
+                        "_event_color_id"
+                    ] = str(
+                        event_color_id
+                    )
+
+
+                    # ------------------------------------------------
+                    # FULL JSON DIAGNOSTIC FOR "Жим"
+                    # ------------------------------------------------
+
+                    if summary.strip().lower() == "жим":
+
+                        print()
+                        print(
+                            "=" * 80
+                        )
+                        print(
+                            "FULL JSON FOR EVENT: Жим"
+                        )
+                        print(
+                            "=" * 80
+                        )
+
+                        print(
+                            json.dumps(
+                                event,
+                                ensure_ascii=False,
+                                indent=2,
+                            )
+                        )
+
+                        print(
+                            "=" * 80
+                        )
+                        print()
+
+
+                    # ------------------------------------------------
+                    # Normal diagnostic output.
+                    # ------------------------------------------------
 
                     print(
                         f"  EVENT: {summary}"
@@ -397,7 +416,6 @@ class CalendarReader:
 
 
         print()
-
 
         print(
             f"Total unique events: "
