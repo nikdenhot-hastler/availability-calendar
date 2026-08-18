@@ -9,24 +9,18 @@ TIMEZONE = "Europe/Kyiv"
 
 DAYS_TO_SHOW = 14
 
-# Шлях до JSON Service Account
 SERVICE_ACCOUNT_FILE = "service-account.json"
 
-# Основний календар.
-# Залишаємо цей параметр, тому що main.py його використовує.
-CALENDAR_ID = "nik.den.hot@gmail.com"
 
-# Усі календарі, які використовуються для визначення зайнятості.
-#
-# Service Account має доступ до обох календарів:
-# 1. Nik Den
-# 2. Volodymyr Medyk
-#
-# Події з обох календарів об'єднуються.
+# Calendars used by CalendarReader
 CALENDAR_IDS = [
     "nik.den.hot@gmail.com",
-    "vmedyk@gmail.com",
 ]
+
+
+# Main calendar
+# Kept for compatibility with other project modules.
+CALENDAR_ID = "nik.den.hot@gmail.com"
 
 
 # ============================================================
@@ -35,18 +29,21 @@ CALENDAR_IDS = [
 
 OUTPUT_DIR = Path("output")
 
-OUTPUT_IMAGE = (
-    OUTPUT_DIR
-    / "availability.png"
-)
+OUTPUT_IMAGE = OUTPUT_DIR / "availability.png"
+
+OUTPUT_IMAGE_UK = OUTPUT_DIR / "availability_uk.png"
+
+
+# ============================================================
+# FONTS
+# ============================================================
+
+FONT_PATH = Path("fonts") / "arial.ttf"
 
 
 # ============================================================
 # IMAGE
 # ============================================================
-
-# Старі параметри залишаємо, щоб не ламати
-# сумісність з іншими файлами проєкту.
 
 WIDTH = 1000
 
@@ -56,11 +53,16 @@ BACKGROUND = "#111111"
 
 TEXT = "#FFFFFF"
 
-AVAILABLE = "#35C759"
+AVAILABLE = "#D7DED2"
 
-LIMITED = "#FFCC00"
+LIMITED = "#D88932"
 
-BOOKED = "#FF453A"
+BOOKED = "#D83A3A"
+
+
+# ============================================================
+# FONT SIZES
+# ============================================================
 
 HEADER_SIZE = 46
 

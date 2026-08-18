@@ -225,6 +225,7 @@ service-account.json
 # Generated output
 output/*
 !output/
+!output/availability.png
 !output/availability_uk.png
 
 # Local test scripts

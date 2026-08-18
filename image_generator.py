@@ -1,22 +1,24 @@
 """
 Availability image generator.
 
-Generates public availability images from Google Calendar.
+Generates two public availability images:
+
+    output/availability.png
+    output/availability_uk.png
+
+The generator never displays event titles or private information.
 
 Statuses:
 
-    FREE:
+    FREE
         No event.
 
-    BUSY:
-        Normal Google Calendar event.
+    BUSY
+        Normal event.
 
-    MOVABLE:
+    MOVABLE
         Event from vmedyk@gmail.com
-        OR event with Google Calendar colorId == "6".
-
-The image does not display event titles
-or private calendar information.
+        or event with Google Calendar colorId == "6".
 """
 
 from datetime import datetime, timedelta
@@ -29,70 +31,11 @@ import config
 
 
 # ============================================================
-# LANGUAGE DATA
-# ============================================================
-
-UKRAINIAN_DAYS = {
-    0: "пн",
-    1: "вт",
-    2: "ср",
-    3: "чт",
-    4: "пт",
-    5: "сб",
-    6: "нд",
-}
-
-
-UKRAINIAN_MONTHS = {
-    1: "січ",
-    2: "лют",
-    3: "бер",
-    4: "квіт",
-    5: "трав",
-    6: "черв",
-    7: "лип",
-    8: "серп",
-    9: "верес",
-    10: "жовт",
-    11: "лист",
-    12: "груд",
-}
-
-
-ENGLISH_DAYS = {
-    0: "Mon",
-    1: "Tue",
-    2: "Wed",
-    3: "Thu",
-    4: "Fri",
-    5: "Sat",
-    6: "Sun",
-}
-
-
-ENGLISH_MONTHS = {
-    1: "Jan",
-    2: "Feb",
-    3: "Mar",
-    4: "Apr",
-    5: "May",
-    6: "Jun",
-    7: "Jul",
-    8: "Aug",
-    9: "Sep",
-    10: "Oct",
-    11: "Nov",
-    12: "Dec",
-}
-
-
-# ============================================================
-# GOOGLE CALENDAR STATUS
+# CALENDAR STATUS
 # ============================================================
 
 MOVABLE_COLOR_ID = "6"
 
-# All events from this calendar are movable.
 MOVABLE_CALENDAR_ID = "vmedyk@gmail.com"
 
 
@@ -100,38 +43,38 @@ MOVABLE_CALENDAR_ID = "vmedyk@gmail.com"
 # COLORS
 # ============================================================
 
-BACKGROUND = (17, 17, 17)
+BACKGROUND = "#111111"
 
-TEXT_PRIMARY = (235, 235, 235)
+TEXT_PRIMARY = "#EBEBEB"
 
-TEXT_SECONDARY = (175, 175, 175)
+TEXT_SECONDARY = "#AFAFAF"
 
-TEXT_MUTED = (105, 105, 105)
+TEXT_MUTED = "#696969"
 
-FREE = (190, 200, 184)
+FREE = "#BEC8B8"
 
-BUSY = (195, 55, 55)
+BUSY = "#C33737"
 
-MOVABLE = (205, 125, 55)
+MOVABLE = "#CD7D37"
 
-HOUR_LINE = (78, 85, 76)
+HOUR_LINE = "#4E554C"
 
-DAY_BACKGROUND = (25, 25, 25)
+DAY_BACKGROUND = "#191919"
 
-WEEKEND = (145, 45, 45)
+WEEKEND = "#912D2D"
 
-ACCENT = (115, 155, 105)
+ACCENT = "#739B69"
 
 
 # ============================================================
-# IMAGE / LAYOUT
+# IMAGE
 # ============================================================
 
 IMAGE_WIDTH = 1050
 
 DAYS_TO_SHOW = 14
 
-START_HOUR = 6
+START_HOUR = 0
 
 TOTAL_HOURS = 24
 
@@ -168,14 +111,11 @@ TIME_SIZE = 24
 
 DAY_LABEL_WIDTH = 190
 
-BAR_X = (
-    MARGIN_LEFT
-    + DAY_LABEL_WIDTH
-)
+BAR_X = MARGIN_LEFT + DAY_LABEL_WIDTH
 
 
 # ============================================================
-# DAY ROWS
+# DAY ROW
 # ============================================================
 
 DAY_SIZE = 24
@@ -282,6 +222,10 @@ class AvailabilityImageGenerator:
         )
 
 
+    # ========================================================
+    # FONT OBJECT
+    # ========================================================
+
     def _font(self, size):
 
         return ImageFont.truetype(
@@ -311,7 +255,7 @@ class AvailabilityImageGenerator:
 
 
         # ----------------------------------------------------
-        # All-day event.
+        # ALL DAY EVENT
         # ----------------------------------------------------
 
         if "date" in start_data:
@@ -342,7 +286,7 @@ class AvailabilityImageGenerator:
 
 
         # ----------------------------------------------------
-        # Timed event.
+        # TIMED EVENT
         # ----------------------------------------------------
 
         start = datetime.fromisoformat(
@@ -388,19 +332,6 @@ class AvailabilityImageGenerator:
         event,
     ):
 
-        # ----------------------------------------------------
-        # SOURCE CALENDAR
-        # ----------------------------------------------------
-        #
-        # IMPORTANT:
-        #
-        # All events from vmedyk@gmail.com are movable.
-        #
-        # This is the original logic that was used before
-        # the color-based logic was introduced.
-        #
-        # ----------------------------------------------------
-
         source_calendar = str(
             event.get(
                 "_source_calendar_id",
@@ -409,17 +340,10 @@ class AvailabilityImageGenerator:
         )
 
 
-        if (
-            source_calendar
-            == MOVABLE_CALENDAR_ID
-        ):
+        if source_calendar == MOVABLE_CALENDAR_ID:
 
             return "movable"
 
-
-        # ----------------------------------------------------
-        # EVENT COLOR
-        # ----------------------------------------------------
 
         event_color_id = str(
             event.get(
@@ -429,17 +353,10 @@ class AvailabilityImageGenerator:
         )
 
 
-        if (
-            event_color_id
-            == MOVABLE_COLOR_ID
-        ):
+        if event_color_id == MOVABLE_COLOR_ID:
 
             return "movable"
 
-
-        # ----------------------------------------------------
-        # CALENDAR COLOR
-        # ----------------------------------------------------
 
         calendar_color_id = str(
             event.get(
@@ -449,17 +366,10 @@ class AvailabilityImageGenerator:
         )
 
 
-        if (
-            calendar_color_id
-            == MOVABLE_COLOR_ID
-        ):
+        if calendar_color_id == MOVABLE_COLOR_ID:
 
             return "movable"
 
-
-        # ----------------------------------------------------
-        # DEFAULT
-        # ----------------------------------------------------
 
         return "busy"
 
@@ -476,28 +386,74 @@ class AvailabilityImageGenerator:
 
         if language == "uk":
 
-            day_name = (
-                UKRAINIAN_DAYS[
-                    date.weekday()
-                ]
-            )
+            days = [
+                "\u043f\u043d",
+                "\u0432\u0442",
+                "\u0441\u0440",
+                "\u0447\u0442",
+                "\u043f\u0442",
+                "\u0441\u0431",
+                "\u043d\u0434",
+            ]
+
+            months = [
+                "\u0441\u0456\u0447",
+                "\u043b\u044e\u0442",
+                "\u0431\u0435\u0440",
+                "\u043a\u0432\u0456\u0442",
+                "\u0442\u0440\u0430\u0432",
+                "\u0447\u0435\u0440\u0432",
+                "\u043b\u0438\u043f",
+                "\u0441\u0435\u0440\u043f",
+                "\u0432\u0435\u0440\u0435\u0441",
+                "\u0436\u043e\u0432\u0442",
+                "\u043b\u0438\u0441\u0442",
+                "\u0433\u0440\u0443\u0434",
+            ]
+
+            day_name = days[
+                date.weekday()
+            ]
 
             date_text = (
                 f"{date.day} "
-                f"{UKRAINIAN_MONTHS[date.month]}"
+                f"{months[date.month - 1]}"
             )
 
         else:
 
-            day_name = (
-                ENGLISH_DAYS[
-                    date.weekday()
-                ]
-            )
+            days = [
+                "Mon",
+                "Tue",
+                "Wed",
+                "Thu",
+                "Fri",
+                "Sat",
+                "Sun",
+            ]
+
+            months = [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+            ]
+
+            day_name = days[
+                date.weekday()
+            ]
 
             date_text = (
                 f"{date.day:02d} "
-                f"{ENGLISH_MONTHS[date.month]}"
+                f"{months[date.month - 1]}"
             )
 
 
@@ -529,10 +485,14 @@ class AvailabilityImageGenerator:
         if language == "uk":
 
             subtitle = (
-                "МОЯ ПОТОЧНА ДОСТУПНІСТЬ:"
+                "\u041c\u041e\u042f "
+                "\u041f\u041e\u0422\u041e\u0427\u041d\u0410 "
+                "\u0414\u041e\u0421\u0422\u0423\u041f\u041d\u0406\u0421\u0422\u042c:"
             )
 
-            title = "ДОСТУПНІСТЬ"
+            title = (
+                "\u0414\u041e\u0421\u0422\u0423\u041f\u041d\u0406\u0421\u0422\u042c"
+            )
 
         else:
 
@@ -824,10 +784,6 @@ class AvailabilityImageGenerator:
         )
 
 
-        # ----------------------------------------------------
-        # Background row.
-        # ----------------------------------------------------
-
         draw.rounded_rectangle(
             (
                 MARGIN_LEFT - 6,
@@ -843,10 +799,6 @@ class AvailabilityImageGenerator:
             fill=DAY_BACKGROUND,
         )
 
-
-        # ----------------------------------------------------
-        # Day/date label.
-        # ----------------------------------------------------
 
         (
             day_name,
@@ -864,8 +816,7 @@ class AvailabilityImageGenerator:
 
         weekday_color = (
             WEEKEND
-            if date.weekday()
-            in (5, 6)
+            if date.weekday() in (5, 6)
             else TEXT_PRIMARY
         )
 
@@ -914,15 +865,13 @@ class AvailabilityImageGenerator:
         # 24-hour row.
         # ----------------------------------------------------
 
-        row_start = (
-            self.timezone.localize(
-                datetime(
-                    date.year,
-                    date.month,
-                    date.day,
-                    START_HOUR,
-                    0,
-                )
+        row_start = self.timezone.localize(
+            datetime(
+                date.year,
+                date.month,
+                date.day,
+                START_HOUR,
+                0,
             )
         )
 
@@ -937,10 +886,6 @@ class AvailabilityImageGenerator:
 
         bar_y = y
 
-
-        # ----------------------------------------------------
-        # Free background.
-        # ----------------------------------------------------
 
         draw.rounded_rectangle(
             (
@@ -957,7 +902,7 @@ class AvailabilityImageGenerator:
 
 
         # ----------------------------------------------------
-        # Collect events for this day.
+        # Events.
         # ----------------------------------------------------
 
         day_events = []
@@ -1008,7 +953,7 @@ class AvailabilityImageGenerator:
 
 
         # ----------------------------------------------------
-        # MOVABLE FIRST.
+        # Movable first.
         # ----------------------------------------------------
 
         for (
@@ -1045,10 +990,9 @@ class AvailabilityImageGenerator:
 
 
         # ----------------------------------------------------
-        # BUSY SECOND.
+        # Busy second.
         #
-        # BUSY is deliberately drawn after MOVABLE.
-        # If two events overlap, red wins.
+        # Red wins if events overlap.
         # ----------------------------------------------------
 
         for (
@@ -1085,7 +1029,7 @@ class AvailabilityImageGenerator:
 
 
         # ----------------------------------------------------
-        # Grid on top of colors.
+        # Grid on top.
         # ----------------------------------------------------
 
         self._draw_hour_grid(
@@ -1125,17 +1069,18 @@ class AvailabilityImageGenerator:
 
                 (
                     FREE,
-                    "ВІЛЬНО",
+                    "\u0412\u0406\u041b\u042c\u041d\u041e",
                 ),
 
                 (
                     BUSY,
-                    "ЗАЙНЯТО",
+                    "\u0417\u0410\u0419\u041d\u042f\u0422\u041e",
                 ),
 
                 (
                     MOVABLE,
-                    "МОЖУ ПЕРЕНЕСТИ",
+                    "\u041c\u041e\u0416\u0423 "
+                    "\u041f\u0415\u0420\u0415\u041d\u0415\u0421\u0422\u0418",
                 ),
 
             ]
@@ -1206,20 +1151,24 @@ class AvailabilityImageGenerator:
             )
 
 
-        # ----------------------------------------------------
-        # Timezone.
-        # ----------------------------------------------------
-
         timezone_font = self._font(
             18
         )
 
 
-        timezone_text = (
-            f"Час: {config.TIMEZONE}"
-            if language == "uk"
-            else f"Time: {config.TIMEZONE}"
-        )
+        if language == "uk":
+
+            timezone_text = (
+                f"\u0427\u0430\u0441: "
+                f"{config.TIMEZONE}"
+            )
+
+        else:
+
+            timezone_text = (
+                f"Time: "
+                f"{config.TIMEZONE}"
+            )
 
 
         bbox = draw.textbbox(
@@ -1276,9 +1225,7 @@ class AvailabilityImageGenerator:
         )
 
 
-        # ----------------------------------------------------
         # Header.
-        # ----------------------------------------------------
 
         self._draw_header(
             draw,
@@ -1286,9 +1233,7 @@ class AvailabilityImageGenerator:
         )
 
 
-        # ----------------------------------------------------
         # Timeline.
-        # ----------------------------------------------------
 
         bar_x = BAR_X
 
@@ -1300,10 +1245,6 @@ class AvailabilityImageGenerator:
         )
 
 
-        # ----------------------------------------------------
-        # Time labels.
-        # ----------------------------------------------------
-
         self._draw_time_scale(
             draw,
             bar_x,
@@ -1311,9 +1252,7 @@ class AvailabilityImageGenerator:
         )
 
 
-        # ----------------------------------------------------
         # Days.
-        # ----------------------------------------------------
 
         now = datetime.now(
             self.timezone
@@ -1345,9 +1284,7 @@ class AvailabilityImageGenerator:
             )
 
 
-        # ----------------------------------------------------
         # Legend.
-        # ----------------------------------------------------
 
         self._draw_legend(
             draw,
@@ -1357,9 +1294,7 @@ class AvailabilityImageGenerator:
         )
 
 
-        # ----------------------------------------------------
-        # Save PNG.
-        # ----------------------------------------------------
+        # Save.
 
         image.save(
             output_path,
@@ -1374,7 +1309,7 @@ class AvailabilityImageGenerator:
 
 
     # ========================================================
-    # GENERATE BOTH LANGUAGES
+    # GENERATE BOTH IMAGES
     # ========================================================
 
     def generate(self):
