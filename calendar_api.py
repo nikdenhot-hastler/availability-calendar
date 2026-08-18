@@ -64,19 +64,24 @@ class CalendarReader:
 
         try:
 
+            # IMPORTANT:
+            # Calendar color is stored in CalendarListEntry,
+            # NOT in the Calendar resource.
             calendar = (
                 self.service
-                .calendars()
+                .calendarList()
                 .get(
                     calendarId=calendar_id,
                 )
                 .execute()
             )
 
+
             color_id = calendar.get(
                 "colorId",
                 "",
             )
+
 
             print(
                 f"Calendar color: "
@@ -84,9 +89,11 @@ class CalendarReader:
                 f"{color_id or '(default)'}"
             )
 
+
             return str(
                 color_id
             )
+
 
         except Exception as error:
 
@@ -94,6 +101,7 @@ class CalendarReader:
                 f"ERROR reading calendar color "
                 f"for {calendar_id}: {error}"
             )
+
 
             return ""
 
@@ -108,9 +116,11 @@ class CalendarReader:
             config.TIMEZONE
         )
 
+
         now = datetime.now(
             timezone
         )
+
 
         end = (
             now
@@ -119,13 +129,19 @@ class CalendarReader:
             )
         )
 
+
         all_events = []
+
 
         print()
         print(
             "Reading Google Calendars..."
         )
 
+
+        # ====================================================
+        # READ EACH CALENDAR
+        # ====================================================
 
         for calendar_id in config.CALENDAR_IDS:
 
@@ -137,7 +153,10 @@ class CalendarReader:
 
 
             # ------------------------------------------------
-            # Get the actual color of the calendar.
+            # Get actual color of the calendar.
+            #
+            # This is the critical part:
+            # calendarList().get()
             # ------------------------------------------------
 
             calendar_color_id = (
@@ -181,16 +200,16 @@ class CalendarReader:
 
                 for event in events:
 
+                    # Store source calendar ID.
                     event[
                         "_source_calendar_id"
                     ] = calendar_id
 
 
-                    # Store the calendar's color.
+                    # Store source calendar color.
                     #
-                    # This is important because an event
-                    # can have no own colorId and simply
-                    # inherit the calendar color.
+                    # This is later used by
+                    # image_generator.py.
                     event[
                         "_calendar_color_id"
                     ] = calendar_color_id
@@ -204,6 +223,7 @@ class CalendarReader:
                         "start",
                         {}
                     )
+
 
                     end_data = event.get(
                         "end",
@@ -305,6 +325,7 @@ class CalendarReader:
                 {}
             )
 
+
             end_data = event.get(
                 "end",
                 {}
@@ -360,6 +381,7 @@ class CalendarReader:
 
 
         print()
+
 
         print(
             f"Total unique events: "
