@@ -1,19 +1,21 @@
 """
 Availability image generator.
 
-Status logic:
+Generates public availability images from Google Calendar.
 
-FREE:
-    No event.
+Statuses:
+    FREE:
+        No event.
 
-BUSY:
-    Normal Google Calendar event.
+    BUSY:
+        Normal Google Calendar event.
 
-MOVABLE:
-    Google Calendar event with colorId == "6"
-    (Tangerine / Мандарин).
+    MOVABLE:
+        Google Calendar event with colorId == "6"
+        (Tangerine / Мандарин).
 
-The image does not display event titles or private information.
+The image does not display event titles
+or private calendar information.
 """
 
 from datetime import datetime, timedelta
@@ -106,10 +108,9 @@ FREE = (190, 200, 184)
 BUSY = (195, 55, 55)
 
 # Movable / flexible appointment.
-# Deliberately muted, not screaming orange.
 MOVABLE = (205, 125, 55)
 
-# Grid.
+# Grid lines.
 HOUR_LINE = (78, 85, 76)
 
 # Background behind each day.
@@ -126,17 +127,22 @@ ACCENT = (115, 155, 105)
 # IMAGE / LAYOUT
 # ============================================================
 
+# Final image width.
 IMAGE_WIDTH = 1050
 
+# Number of days displayed.
 DAYS_TO_SHOW = 14
 
 # Timeline starts at 06:00.
 START_HOUR = 6
 
+# 24 hours total.
 TOTAL_HOURS = 24
 
+# 12 large sectors.
 SECTORS = 12
 
+# Each large sector represents 2 hours.
 HOURS_PER_SECTOR = 2
 
 
@@ -152,20 +158,22 @@ MARGIN_RIGHT = 28
 # HEADER
 # ============================================================
 
-HEADER_TOP = 18
+HEADER_TOP = 22
 
-SUBTITLE_SIZE = 17
-TITLE_SIZE = 34
+SUBTITLE_SIZE = 20
+TITLE_SIZE = 36
 
 
 # ============================================================
 # TIMELINE
 # ============================================================
 
-TIME_SIZE = 16
+TIME_SIZE = 20
 
-DAY_LABEL_WIDTH = 175
+# Space occupied by day/date label.
+DAY_LABEL_WIDTH = 190
 
+# Timeline starts after day/date label.
 BAR_X = MARGIN_LEFT + DAY_LABEL_WIDTH
 
 
@@ -173,21 +181,40 @@ BAR_X = MARGIN_LEFT + DAY_LABEL_WIDTH
 # DAY ROWS
 # ============================================================
 
-DAY_SIZE = 20
+DAY_SIZE = 24
 
-DAY_START_Y = 112
+DAY_START_Y = 120
 
-DAY_HEIGHT = 58
+# Increased vertical spacing.
+DAY_HEIGHT = 68
 
-BAR_HEIGHT = 27
+# Increased bar height.
+BAR_HEIGHT = 34
 
 
 # ============================================================
 # LEGEND
 # ============================================================
 
-LEGEND_SIZE = 15
+# Large readable legend font.
+LEGEND_SIZE = 28
 
+# Large legend markers.
+LEGEND_MARKER_SIZE = 34
+
+# Vertical distance between legend rows.
+LEGEND_ROW_HEIGHT = 58
+
+# Space above legend.
+LEGEND_TOP_GAP = 20
+
+# Space below legend.
+LEGEND_BOTTOM_GAP = 25
+
+
+# ============================================================
+# CLASS
+# ============================================================
 
 class AvailabilityImageGenerator:
 
@@ -208,11 +235,15 @@ class AvailabilityImageGenerator:
 
         self.width = IMAGE_WIDTH
 
+        # Calculate image height dynamically.
         self.height = (
             DAY_START_Y
             + DAYS_TO_SHOW * DAY_HEIGHT
-            + 70
+            + LEGEND_TOP_GAP
+            + LEGEND_ROW_HEIGHT * 3
+            + LEGEND_BOTTOM_GAP
         )
+
 
     # ========================================================
     # FONT
@@ -233,7 +264,9 @@ class AvailabilityImageGenerator:
             )
 
             if local_path.exists():
-                return str(local_path)
+                return str(
+                    local_path
+                )
 
         linux_fonts = [
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -249,12 +282,14 @@ class AvailabilityImageGenerator:
             "No usable font found."
         )
 
+
     def _font(self, size):
 
         return ImageFont.truetype(
             self.font_path,
             size,
         )
+
 
     # ========================================================
     # EVENT TIME PARSING
@@ -302,6 +337,7 @@ class AvailabilityImageGenerator:
                 True,
             )
 
+
         # ----------------------------------------------------
         # Timed event.
         # ----------------------------------------------------
@@ -336,27 +372,12 @@ class AvailabilityImageGenerator:
             False,
         )
 
+
     # ========================================================
     # EVENT STATUS
     # ========================================================
 
     def _event_status(self, event):
-
-        # --------------------------------------------------------
-        # MOVABLE EVENTS
-        # --------------------------------------------------------
-        #
-        # 1. Events from vmedyk@gmail.com are movable.
-        #
-        # 2. An event explicitly marked with Google Calendar
-        #    colorId 6 (Tangerine / Мандарин) is also movable.
-        #
-        # --------------------------------------------------------
-
-        source_calendar = event.get(
-            "_source_calendar_id",
-            "",
-        )
 
         color_id = str(
             event.get(
@@ -365,15 +386,12 @@ class AvailabilityImageGenerator:
             )
         )
 
-        if source_calendar == "vmedyk@gmail.com":
-
-            return "movable"
-
         if color_id == MOVABLE_COLOR_ID:
 
             return "movable"
 
         return "busy"
+
 
     # ========================================================
     # DATE TEXT
@@ -412,6 +430,7 @@ class AvailabilityImageGenerator:
             date_text,
         )
 
+
     # ========================================================
     # HEADER
     # ========================================================
@@ -446,6 +465,7 @@ class AvailabilityImageGenerator:
 
             title = "AVAILABILITY"
 
+
         draw.text(
             (
                 MARGIN_LEFT,
@@ -459,12 +479,13 @@ class AvailabilityImageGenerator:
         draw.text(
             (
                 MARGIN_LEFT,
-                HEADER_TOP + 25,
+                HEADER_TOP + 29,
             ),
             title,
             font=title_font,
             fill=TEXT_PRIMARY,
         )
+
 
     # ========================================================
     # TIME SCALE
@@ -518,12 +539,13 @@ class AvailabilityImageGenerator:
                 (
                     center_x
                     - label_width / 2,
-                    83,
+                    88,
                 ),
                 label,
                 font=font,
                 fill=TEXT_PRIMARY,
             )
+
 
     # ========================================================
     # HOUR GRID
@@ -569,8 +591,8 @@ class AvailabilityImageGenerator:
             # Every 1 hour.
             else:
 
-                dash_length = 4
-                gap = 4
+                dash_length = 5
+                gap = 5
 
                 current_y = bar_y
 
@@ -600,6 +622,7 @@ class AvailabilityImageGenerator:
                         dash_length
                         + gap
                     )
+
 
     # ========================================================
     # DRAW INTERVAL
@@ -632,6 +655,7 @@ class AvailabilityImageGenerator:
         if visible_end <= visible_start:
             return
 
+
         total_seconds = (
             row_end - row_start
         ).total_seconds()
@@ -643,6 +667,7 @@ class AvailabilityImageGenerator:
         end_seconds = (
             visible_end - row_start
         ).total_seconds()
+
 
         x1 = (
             bar_x
@@ -658,13 +683,13 @@ class AvailabilityImageGenerator:
             / total_seconds
         )
 
-        if status == "movable":
 
-            fill = MOVABLE
+        fill = (
+            MOVABLE
+            if status == "movable"
+            else BUSY
+        )
 
-        else:
-
-            fill = BUSY
 
         draw.rectangle(
             (
@@ -675,6 +700,7 @@ class AvailabilityImageGenerator:
             ),
             fill=fill,
         )
+
 
     # ========================================================
     # DRAW ONE DAY
@@ -694,8 +720,9 @@ class AvailabilityImageGenerator:
             DAY_SIZE
         )
 
+
         # ----------------------------------------------------
-        # Row background.
+        # Background row.
         # ----------------------------------------------------
 
         draw.rounded_rectangle(
@@ -705,11 +732,12 @@ class AvailabilityImageGenerator:
                 self.width
                 - MARGIN_RIGHT
                 + 6,
-                y + BAR_HEIGHT + 12,
+                y + BAR_HEIGHT + 14,
             ),
-            radius=5,
+            radius=6,
             fill=DAY_BACKGROUND,
         )
+
 
         # ----------------------------------------------------
         # Day/date label.
@@ -723,9 +751,11 @@ class AvailabilityImageGenerator:
             language,
         )
 
+
         weekday_text = (
             f"{day_name},"
         )
+
 
         weekday_color = (
             WEEKEND
@@ -733,7 +763,9 @@ class AvailabilityImageGenerator:
             else TEXT_PRIMARY
         )
 
-        label_y = y + 6
+
+        label_y = y + 5
+
 
         draw.text(
             (
@@ -745,22 +777,25 @@ class AvailabilityImageGenerator:
             fill=weekday_color,
         )
 
+
         bbox = draw.textbbox(
             (0, 0),
             weekday_text,
             font=day_font,
         )
 
+
         weekday_width = (
             bbox[2]
             - bbox[0]
         )
 
+
         draw.text(
             (
                 MARGIN_LEFT
                 + weekday_width
-                + 7,
+                + 8,
                 label_y,
             ),
             date_text,
@@ -768,8 +803,9 @@ class AvailabilityImageGenerator:
             fill=TEXT_SECONDARY,
         )
 
+
         # ----------------------------------------------------
-        # Time row.
+        # 24-hour row.
         # ----------------------------------------------------
 
         row_start = self.timezone.localize(
@@ -782,6 +818,7 @@ class AvailabilityImageGenerator:
             )
         )
 
+
         row_end = (
             row_start
             + timedelta(
@@ -789,10 +826,12 @@ class AvailabilityImageGenerator:
             )
         )
 
+
         bar_y = y
 
+
         # ----------------------------------------------------
-        # Draw free background.
+        # Free background.
         # ----------------------------------------------------
 
         draw.rounded_rectangle(
@@ -802,15 +841,17 @@ class AvailabilityImageGenerator:
                 bar_x + bar_width,
                 bar_y + BAR_HEIGHT,
             ),
-            radius=4,
+            radius=5,
             fill=FREE,
         )
 
+
         # ----------------------------------------------------
-        # Draw events.
+        # Collect events for this day.
         # ----------------------------------------------------
 
         day_events = []
+
 
         for event in self.events:
 
@@ -828,15 +869,19 @@ class AvailabilityImageGenerator:
 
                 continue
 
+
+            # No overlap.
             if event_end <= row_start:
                 continue
 
             if event_start >= row_end:
                 continue
 
+
             status = self._event_status(
                 event
             )
+
 
             day_events.append(
                 (
@@ -847,14 +892,13 @@ class AvailabilityImageGenerator:
                 )
             )
 
+
         # ----------------------------------------------------
-        # Important:
+        # MOVABLE FIRST.
         #
-        # If a movable event overlaps a fixed event,
-        # RED must win.
-        #
-        # Therefore we draw movable first,
-        # then busy.
+        # If movable overlaps busy,
+        # BUSY will be drawn later
+        # and therefore RED wins.
         # ----------------------------------------------------
 
         for (
@@ -864,25 +908,33 @@ class AvailabilityImageGenerator:
             is_all_day,
         ) in day_events:
 
-            if status == "movable":
+            if status != "movable":
+                continue
 
-                if is_all_day:
 
-                    event_start = row_start
-                    event_end = row_end
+            if is_all_day:
 
-                self._draw_interval(
-                    draw,
-                    row_start,
-                    row_end,
-                    event_start,
-                    event_end,
-                    status,
-                    bar_x,
-                    bar_y,
-                    bar_width,
-                    BAR_HEIGHT,
-                )
+                event_start = row_start
+                event_end = row_end
+
+
+            self._draw_interval(
+                draw,
+                row_start,
+                row_end,
+                event_start,
+                event_end,
+                status,
+                bar_x,
+                bar_y,
+                bar_width,
+                BAR_HEIGHT,
+            )
+
+
+        # ----------------------------------------------------
+        # BUSY SECOND.
+        # ----------------------------------------------------
 
         for (
             event_start,
@@ -891,25 +943,29 @@ class AvailabilityImageGenerator:
             is_all_day,
         ) in day_events:
 
-            if status == "busy":
+            if status != "busy":
+                continue
 
-                if is_all_day:
 
-                    event_start = row_start
-                    event_end = row_end
+            if is_all_day:
 
-                self._draw_interval(
-                    draw,
-                    row_start,
-                    row_end,
-                    event_start,
-                    event_end,
-                    status,
-                    bar_x,
-                    bar_y,
-                    bar_width,
-                    BAR_HEIGHT,
-                )
+                event_start = row_start
+                event_end = row_end
+
+
+            self._draw_interval(
+                draw,
+                row_start,
+                row_end,
+                event_start,
+                event_end,
+                status,
+                bar_x,
+                bar_y,
+                bar_width,
+                BAR_HEIGHT,
+            )
+
 
         # ----------------------------------------------------
         # Grid on top of colors.
@@ -923,10 +979,12 @@ class AvailabilityImageGenerator:
             BAR_HEIGHT,
         )
 
+
         return (
             y
             + DAY_HEIGHT
         )
+
 
     # ========================================================
     # LEGEND
@@ -943,116 +1001,100 @@ class AvailabilityImageGenerator:
             LEGEND_SIZE
         )
 
+
         if language == "uk":
 
-            free_text = "вільно"
-            busy_text = "зайнято"
-            movable_text = "можна перенести"
+            items = [
+                (
+                    FREE,
+                    "ВІЛЬНО",
+                ),
+                (
+                    BUSY,
+                    "ЗАЙНЯТО",
+                ),
+                (
+                    MOVABLE,
+                    "МОЖУ ПЕРЕНЕСТИ",
+                ),
+            ]
 
         else:
 
-            free_text = "available"
-            busy_text = "booked"
-            movable_text = "movable"
+            items = [
+                (
+                    FREE,
+                    "AVAILABLE",
+                ),
+                (
+                    BUSY,
+                    "BOOKED",
+                ),
+                (
+                    MOVABLE,
+                    "CAN RESCHEDULE",
+                ),
+            ]
 
-        marker_size = 20
 
-        # ----------------------------------------------------
-        # FREE
-        # ----------------------------------------------------
+        marker_size = LEGEND_MARKER_SIZE
 
-        free_x = MARGIN_LEFT
 
-        draw.rounded_rectangle(
-            (
-                free_x,
-                y,
-                free_x + marker_size,
-                y + marker_size,
-            ),
-            radius=4,
-            fill=FREE,
-        )
+        for index, (
+            marker_color,
+            text,
+        ) in enumerate(items):
 
-        draw.text(
-            (
-                free_x
-                + marker_size
-                + 8,
-                y - 1,
-            ),
-            free_text,
-            font=font,
-            fill=TEXT_SECONDARY,
-        )
+            row_y = (
+                y
+                + index
+                * LEGEND_ROW_HEIGHT
+            )
 
-        # ----------------------------------------------------
-        # BUSY
-        # ----------------------------------------------------
 
-        busy_x = (
-            MARGIN_LEFT
-            + 115
-        )
+            # ------------------------------------------------
+            # Marker.
+            # ------------------------------------------------
 
-        draw.rounded_rectangle(
-            (
-                busy_x,
-                y,
-                busy_x + marker_size,
-                y + marker_size,
-            ),
-            radius=4,
-            fill=BUSY,
-        )
+            draw.rounded_rectangle(
+                (
+                    MARGIN_LEFT,
+                    row_y,
+                    MARGIN_LEFT
+                    + marker_size,
+                    row_y
+                    + marker_size,
+                ),
+                radius=6,
+                fill=marker_color,
+            )
 
-        draw.text(
-            (
-                busy_x
-                + marker_size
-                + 8,
-                y - 1,
-            ),
-            busy_text,
-            font=font,
-            fill=TEXT_SECONDARY,
-        )
 
-        # ----------------------------------------------------
-        # MOVABLE
-        # ----------------------------------------------------
+            # ------------------------------------------------
+            # Text.
+            # ------------------------------------------------
 
-        movable_x = (
-            MARGIN_LEFT
-            + 225
-        )
+            draw.text(
+                (
+                    MARGIN_LEFT
+                    + marker_size
+                    + 16,
+                    row_y - 3,
+                ),
+                text,
+                font=font,
+                fill=TEXT_PRIMARY,
+            )
 
-        draw.rounded_rectangle(
-            (
-                movable_x,
-                y,
-                movable_x + marker_size,
-                y + marker_size,
-            ),
-            radius=4,
-            fill=MOVABLE,
-        )
-
-        draw.text(
-            (
-                movable_x
-                + marker_size
-                + 8,
-                y - 1,
-            ),
-            movable_text,
-            font=font,
-            fill=TEXT_SECONDARY,
-        )
 
         # ----------------------------------------------------
-        # TIMEZONE
+        # Timezone.
         # ----------------------------------------------------
+
+        timezone_font = self._font(
+            18
+        )
+
 
         timezone_text = (
             f"Час: {config.TIMEZONE}"
@@ -1060,28 +1102,34 @@ class AvailabilityImageGenerator:
             else f"Time: {config.TIMEZONE}"
         )
 
+
         bbox = draw.textbbox(
             (0, 0),
             timezone_text,
-            font=font,
+            font=timezone_font,
         )
+
 
         timezone_width = (
             bbox[2]
             - bbox[0]
         )
 
+
         draw.text(
             (
                 self.width
                 - MARGIN_RIGHT
                 - timezone_width,
-                y - 1,
+                y
+                + LEGEND_ROW_HEIGHT * 3
+                - 24,
             ),
             timezone_text,
-            font=font,
+            font=timezone_font,
             fill=TEXT_MUTED,
         )
+
 
     # ========================================================
     # GENERATE ONE LANGUAGE
@@ -1102,9 +1150,11 @@ class AvailabilityImageGenerator:
             BACKGROUND,
         )
 
+
         draw = ImageDraw.Draw(
             image
         )
+
 
         # Header.
         self._draw_header(
@@ -1112,14 +1162,17 @@ class AvailabilityImageGenerator:
             language,
         )
 
+
         # Timeline.
         bar_x = BAR_X
+
 
         bar_width = (
             self.width
             - bar_x
             - MARGIN_RIGHT
         )
+
 
         # Time labels.
         self._draw_time_scale(
@@ -1128,12 +1181,15 @@ class AvailabilityImageGenerator:
             bar_width,
         )
 
+
         # Days.
         now = datetime.now(
             self.timezone
         )
 
+
         y = DAY_START_Y
+
 
         for offset in range(
             DAYS_TO_SHOW
@@ -1146,6 +1202,7 @@ class AvailabilityImageGenerator:
                 )
             ).date()
 
+
             y = self._draw_day(
                 draw,
                 date,
@@ -1155,23 +1212,27 @@ class AvailabilityImageGenerator:
                 bar_width,
             )
 
+
         # Legend.
         self._draw_legend(
             draw,
             language,
-            y + 5,
+            y + LEGEND_TOP_GAP,
         )
 
-        # Save.
+
+        # Save PNG.
         image.save(
             output_path,
             "PNG",
         )
 
+
         print(
             f"Availability image created: "
             f"{output_path}"
         )
+
 
     # ========================================================
     # GENERATE BOTH LANGUAGES
@@ -1184,20 +1245,24 @@ class AvailabilityImageGenerator:
             / "availability.png"
         )
 
+
         ukrainian_output = (
             config.OUTPUT_DIR
             / "availability_uk.png"
         )
+
 
         self._generate_language(
             "en",
             english_output,
         )
 
+
         self._generate_language(
             "uk",
             ukrainian_output,
         )
+
 
         print(
             "Both availability images "
