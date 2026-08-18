@@ -255,7 +255,23 @@ class CalendarReader:
                         "summary",
                         "(без назви)"
                     )
+                    
+    if summary == "Жим":
+    import json
 
+    print()
+    print("=" * 80)
+    print("FULL JSON FOR EVENT: Жим")
+    print("=" * 80)
+    print(
+        json.dumps(
+            event,
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    print("=" * 80)
+    print()
 
                     event_color_id = event.get(
                         "colorId",
