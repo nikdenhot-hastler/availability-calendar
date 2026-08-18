@@ -4,7 +4,8 @@ Google Calendar API reader.
 Reads availability from multiple Google Calendars
 and returns one combined list of events.
 
-Events from MOVABLE calendars are marked as movable.
+Events from calendars with colorId == "6"
+(Tangerine / Мандарин) are marked as movable.
 """
 
 from datetime import datetime, timedelta
@@ -20,6 +21,15 @@ import config
 SCOPES = [
     "https://www.googleapis.com/auth/calendar.readonly"
 ]
+
+
+# ============================================================
+# GOOGLE CALENDAR STATUS
+# ============================================================
+
+# Google Calendar:
+# 6 = Tangerine / Мандарин
+MOVABLE_COLOR_ID = "6"
 
 
 class CalendarReader:
@@ -42,13 +52,65 @@ class CalendarReader:
             cache_discovery=False,
         )
 
+
+    # ========================================================
+    # CALENDAR COLOR
+    # ========================================================
+
+    def _get_calendar_color_id(
+        self,
+        calendar_id,
+    ):
+
+        try:
+
+            calendar = (
+                self.service
+                .calendars()
+                .get(
+                    calendarId=calendar_id,
+                )
+                .execute()
+            )
+
+            color_id = calendar.get(
+                "colorId",
+                "",
+            )
+
+            print(
+                f"Calendar color: "
+                f"{calendar_id} -> "
+                f"{color_id or '(default)'}"
+            )
+
+            return str(
+                color_id
+            )
+
+        except Exception as error:
+
+            print(
+                f"ERROR reading calendar color "
+                f"for {calendar_id}: {error}"
+            )
+
+            return ""
+
+
+    # ========================================================
+    # GET EVENTS
+    # ========================================================
+
     def get_events(self):
 
         timezone = pytz.timezone(
             config.TIMEZONE
         )
 
-        now = datetime.now(timezone)
+        now = datetime.now(
+            timezone
+        )
 
         end = (
             now
@@ -60,13 +122,30 @@ class CalendarReader:
         all_events = []
 
         print()
-        print("Reading Google Calendars...")
+        print(
+            "Reading Google Calendars..."
+        )
+
 
         for calendar_id in config.CALENDAR_IDS:
 
+            print()
             print(
-                f"Reading calendar: {calendar_id}"
+                f"Reading calendar: "
+                f"{calendar_id}"
             )
+
+
+            # ------------------------------------------------
+            # Get the actual color of the calendar.
+            # ------------------------------------------------
+
+            calendar_color_id = (
+                self._get_calendar_color_id(
+                    calendar_id
+                )
+            )
+
 
             try:
 
@@ -83,22 +162,39 @@ class CalendarReader:
                     .execute()
                 )
 
+
                 events = result.get(
                     "items",
                     []
                 )
 
+
                 print(
                     f"Found {len(events)} events"
                 )
 
+
                 # ------------------------------------------------
-                # Add source calendar information to every event.
+                # Add source calendar information
+                # to every event.
                 # ------------------------------------------------
 
                 for event in events:
 
-                    event["_source_calendar_id"] = calendar_id
+                    event[
+                        "_source_calendar_id"
+                    ] = calendar_id
+
+
+                    # Store the calendar's color.
+                    #
+                    # This is important because an event
+                    # can have no own colorId and simply
+                    # inherit the calendar color.
+                    event[
+                        "_calendar_color_id"
+                    ] = calendar_color_id
+
 
                     # ------------------------------------------------
                     # Diagnostic information.
@@ -114,48 +210,76 @@ class CalendarReader:
                         {}
                     )
 
+
                     start_value = (
-                        start_data.get("dateTime")
-                        or start_data.get("date")
+                        start_data.get(
+                            "dateTime"
+                        )
+                        or start_data.get(
+                            "date"
+                        )
                     )
 
+
                     end_value = (
-                        end_data.get("dateTime")
-                        or end_data.get("date")
+                        end_data.get(
+                            "dateTime"
+                        )
+                        or end_data.get(
+                            "date"
+                        )
                     )
+
 
                     summary = event.get(
                         "summary",
                         "(без назви)"
                     )
 
-                    color_id = event.get(
+
+                    event_color_id = event.get(
                         "colorId",
                         ""
                     )
+
 
                     print(
                         f"  EVENT: {summary}"
                     )
 
-                    print(
-                        f"         "
-                        f"{start_value} -> {end_value}"
-                    )
 
                     print(
                         f"         "
-                        f"Calendar: {calendar_id}"
+                        f"{start_value} -> "
+                        f"{end_value}"
                     )
+
 
                     print(
                         f"         "
-                        f"colorId: {color_id or '(calendar color)'}"
+                        f"Calendar: "
+                        f"{calendar_id}"
                     )
+
+
+                    print(
+                        f"         "
+                        f"Event colorId: "
+                        f"{event_color_id or '(calendar color)'}"
+                    )
+
+
+                    print(
+                        f"         "
+                        f"Calendar colorId: "
+                        f"{calendar_color_id or '(default)'}"
+                    )
+
 
                 all_events.extend(
                     events
                 )
+
 
             except Exception as error:
 
@@ -164,13 +288,15 @@ class CalendarReader:
                     f"{calendar_id}: {error}"
                 )
 
-        # ============================================================
+
+        # ========================================================
         # REMOVE EXACT DUPLICATES
-        # ============================================================
+        # ========================================================
 
         unique_events = []
 
         seen = set()
+
 
         for event in all_events:
 
@@ -184,20 +310,32 @@ class CalendarReader:
                 {}
             )
 
+
             start_value = (
-                start_data.get("dateTime")
-                or start_data.get("date")
+                start_data.get(
+                    "dateTime"
+                )
+                or start_data.get(
+                    "date"
+                )
             )
 
+
             end_value = (
-                end_data.get("dateTime")
-                or end_data.get("date")
+                end_data.get(
+                    "dateTime"
+                )
+                or end_data.get(
+                    "date"
+                )
             )
+
 
             summary = event.get(
                 "summary",
                 ""
             )
+
 
             duplicate_key = (
                 summary,
@@ -205,16 +343,21 @@ class CalendarReader:
                 end_value,
             )
 
+
             if duplicate_key in seen:
+
                 continue
+
 
             seen.add(
                 duplicate_key
             )
 
+
             unique_events.append(
                 event
             )
+
 
         print()
 
@@ -222,5 +365,6 @@ class CalendarReader:
             f"Total unique events: "
             f"{len(unique_events)}"
         )
+
 
         return unique_events
