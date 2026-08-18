@@ -12,8 +12,8 @@ Statuses:
         Normal Google Calendar event.
 
     MOVABLE:
-        Event with colorId == "6"
-        either on the event itself or on its source calendar.
+        Event from vmedyk@gmail.com
+        OR event with Google Calendar colorId == "6".
 
 The image does not display event titles
 or private calendar information.
@@ -43,7 +43,6 @@ UKRAINIAN_DAYS = {
 }
 
 
-# Short Ukrainian month names.
 UKRAINIAN_MONTHS = {
     1: "січ",
     2: "лют",
@@ -91,9 +90,10 @@ ENGLISH_MONTHS = {
 # GOOGLE CALENDAR STATUS
 # ============================================================
 
-# Google Calendar:
-# 6 = Tangerine / Мандарин
 MOVABLE_COLOR_ID = "6"
+
+# All events from this calendar are movable.
+MOVABLE_CALENDAR_ID = "vmedyk@gmail.com"
 
 
 # ============================================================
@@ -108,32 +108,18 @@ TEXT_SECONDARY = (175, 175, 175)
 
 TEXT_MUTED = (105, 105, 105)
 
-
-# Free time.
 FREE = (190, 200, 184)
 
-
-# Definitely occupied.
 BUSY = (195, 55, 55)
 
-
-# Movable / flexible appointment.
 MOVABLE = (205, 125, 55)
 
-
-# Grid lines.
 HOUR_LINE = (78, 85, 76)
 
-
-# Background behind each day.
 DAY_BACKGROUND = (25, 25, 25)
 
-
-# Weekend label.
 WEEKEND = (145, 45, 45)
 
-
-# Header accent.
 ACCENT = (115, 155, 105)
 
 
@@ -178,15 +164,10 @@ TITLE_SIZE = 36
 # TIMELINE
 # ============================================================
 
-# Increased time font.
 TIME_SIZE = 24
 
-
-# Space occupied by day/date label.
 DAY_LABEL_WIDTH = 190
 
-
-# Timeline starts after day/date label.
 BAR_X = (
     MARGIN_LEFT
     + DAY_LABEL_WIDTH
@@ -235,28 +216,20 @@ class AvailabilityImageGenerator:
             config.TIMEZONE
         )
 
-
         config.OUTPUT_DIR.mkdir(
             parents=True,
             exist_ok=True,
         )
 
-
-        self.font_path = (
-            self._font_path()
-        )
-
+        self.font_path = self._font_path()
 
         self.width = IMAGE_WIDTH
 
-
         self.height = (
             DAY_START_Y
-            + DAYS_TO_SHOW
-            * DAY_HEIGHT
+            + DAYS_TO_SHOW * DAY_HEIGHT
             + LEGEND_TOP_GAP
-            + LEGEND_ROW_HEIGHT
-            * 3
+            + LEGEND_ROW_HEIGHT * 3
             + LEGEND_BOTTOM_GAP
         )
 
@@ -273,13 +246,11 @@ class AvailabilityImageGenerator:
             None,
         )
 
-
         if local_font:
 
             local_path = Path(
                 local_font
             )
-
 
             if local_path.exists():
 
@@ -333,7 +304,6 @@ class AvailabilityImageGenerator:
             {},
         )
 
-
         end_data = event.get(
             "end",
             {},
@@ -351,22 +321,18 @@ class AvailabilityImageGenerator:
                 "%Y-%m-%d",
             )
 
-
             end_date = datetime.strptime(
                 end_data["date"],
                 "%Y-%m-%d",
             )
 
-
             start = self.timezone.localize(
                 start_date
             )
 
-
             end = self.timezone.localize(
                 end_date
             )
-
 
             return (
                 start,
@@ -382,7 +348,6 @@ class AvailabilityImageGenerator:
         start = datetime.fromisoformat(
             start_data["dateTime"]
         )
-
 
         end = datetime.fromisoformat(
             end_data["dateTime"]
@@ -424,7 +389,36 @@ class AvailabilityImageGenerator:
     ):
 
         # ----------------------------------------------------
-        # First check the event's own color.
+        # SOURCE CALENDAR
+        # ----------------------------------------------------
+        #
+        # IMPORTANT:
+        #
+        # All events from vmedyk@gmail.com are movable.
+        #
+        # This is the original logic that was used before
+        # the color-based logic was introduced.
+        #
+        # ----------------------------------------------------
+
+        source_calendar = str(
+            event.get(
+                "_source_calendar_id",
+                "",
+            )
+        )
+
+
+        if (
+            source_calendar
+            == MOVABLE_CALENDAR_ID
+        ):
+
+            return "movable"
+
+
+        # ----------------------------------------------------
+        # EVENT COLOR
         # ----------------------------------------------------
 
         event_color_id = str(
@@ -444,8 +438,7 @@ class AvailabilityImageGenerator:
 
 
         # ----------------------------------------------------
-        # If event has no own color,
-        # check the source calendar color.
+        # CALENDAR COLOR
         # ----------------------------------------------------
 
         calendar_color_id = str(
@@ -465,7 +458,7 @@ class AvailabilityImageGenerator:
 
 
         # ----------------------------------------------------
-        # Everything else is busy.
+        # DEFAULT
         # ----------------------------------------------------
 
         return "busy"
@@ -489,12 +482,10 @@ class AvailabilityImageGenerator:
                 ]
             )
 
-
             date_text = (
                 f"{date.day} "
                 f"{UKRAINIAN_MONTHS[date.month]}"
             )
-
 
         else:
 
@@ -503,7 +494,6 @@ class AvailabilityImageGenerator:
                     date.weekday()
                 ]
             )
-
 
             date_text = (
                 f"{date.day:02d} "
@@ -531,7 +521,6 @@ class AvailabilityImageGenerator:
             SUBTITLE_SIZE
         )
 
-
         title_font = self._font(
             TITLE_SIZE
         )
@@ -544,7 +533,6 @@ class AvailabilityImageGenerator:
             )
 
             title = "ДОСТУПНІСТЬ"
-
 
         else:
 
@@ -675,7 +663,6 @@ class AvailabilityImageGenerator:
             )
 
 
-            # Every 2 hours.
             if hour_index % 2 == 0:
 
                 draw.line(
@@ -690,8 +677,6 @@ class AvailabilityImageGenerator:
                     width=2,
                 )
 
-
-            # Every 1 hour.
             else:
 
                 dash_length = 5
@@ -995,7 +980,6 @@ class AvailabilityImageGenerator:
                 continue
 
 
-            # No overlap.
             if event_end <= row_start:
 
                 continue
@@ -1025,10 +1009,6 @@ class AvailabilityImageGenerator:
 
         # ----------------------------------------------------
         # MOVABLE FIRST.
-        #
-        # If movable overlaps busy,
-        # BUSY will be drawn later,
-        # therefore RED wins.
         # ----------------------------------------------------
 
         for (
@@ -1066,6 +1046,9 @@ class AvailabilityImageGenerator:
 
         # ----------------------------------------------------
         # BUSY SECOND.
+        #
+        # BUSY is deliberately drawn after MOVABLE.
+        # If two events overlap, red wins.
         # ----------------------------------------------------
 
         for (
@@ -1157,7 +1140,6 @@ class AvailabilityImageGenerator:
 
             ]
 
-
         else:
 
             items = [
@@ -1197,10 +1179,6 @@ class AvailabilityImageGenerator:
             )
 
 
-            # ------------------------------------------------
-            # Marker.
-            # ------------------------------------------------
-
             draw.rounded_rectangle(
                 (
                     MARGIN_LEFT,
@@ -1214,10 +1192,6 @@ class AvailabilityImageGenerator:
                 fill=marker_color,
             )
 
-
-            # ------------------------------------------------
-            # Text.
-            # ------------------------------------------------
 
             draw.text(
                 (
