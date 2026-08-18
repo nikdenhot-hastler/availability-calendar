@@ -1406,4 +1406,4 @@ class AvailabilityImageGenerator:
         print(
             "Both availability images "
             "generated successfully."
-        )
+        ).
