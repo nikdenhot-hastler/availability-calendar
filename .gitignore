@@ -223,7 +223,9 @@ service-account.json
 service-account.json
 
 # Generated output
-output/
+output/*
+!output/
+!output/availability_uk.png
 
 # Local test scripts
 check_vmedyk.py
