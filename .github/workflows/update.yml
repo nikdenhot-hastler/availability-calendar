@@ -32,6 +32,10 @@ jobs:
         run: |
           printf '%s' "$GOOGLE_SERVICE_ACCOUNT_JSON" > service-account.json
 
+      - name: Sync calendars
+        run: |
+          python calendar_sync.py
+
       - name: Generate availability images
         run: |
           python main.py
@@ -46,6 +50,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          git add output/availability.png
           git add output/availability_uk.png
 
           if git diff --cached --quiet; then
