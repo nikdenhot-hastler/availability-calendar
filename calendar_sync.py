@@ -501,11 +501,17 @@ def events_are_equal(
     # START
     # --------------------------------------------------------
 
-    if target_start.get(
-        "date"
-    ) != expected_start.get(
-        "date"
-    ):
+    if "date" in expected_start:
+
+        if target_start.get(
+            "date"
+        ) != expected_start.get(
+            "date"
+        ):
+
+            return False
+
+    else:
 
         if target_start.get(
             "dateTime"
@@ -519,11 +525,17 @@ def events_are_equal(
     # END
     # --------------------------------------------------------
 
-    if target_end.get(
-        "date"
-    ) != expected_end.get(
-        "date"
-    ):
+    if "date" in expected_end:
+
+        if target_end.get(
+            "date"
+        ) != expected_end.get(
+            "date"
+        ):
+
+            return False
+
+    else:
 
         if target_end.get(
             "dateTime"
